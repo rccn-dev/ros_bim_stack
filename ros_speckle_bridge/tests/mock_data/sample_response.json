@@ -1,0 +1,35 @@
+{
+  "stream_id": "a1b2c3d4e5",
+  "commit_id": "f6g7h8i9j0",
+  "objects": [
+    {
+      "id": "mock-wall-001",
+      "speckle_type": "Objects.BuiltElements.Wall",
+      "category": "Walls",
+      "type": "Basic Wall: Generic 200mm",
+      "bbox": {
+        "min": {"x": 0.0, "y": 0.0, "z": 0.0},
+        "max": {"x": 5.0, "y": 0.2, "z": 3.0}
+      },
+      "parameters": {
+        "Height": {"name": "Height", "value": 3.0, "units": "m"},
+        "Width": {"name": "Width", "value": 0.2, "units": "m"},
+        "Fire Rating": {"name": "Fire Rating", "value": "2 Hour", "units": "Text"}
+      }
+    },
+    {
+      "id": "mock-floor-001",
+      "speckle_type": "Objects.BuiltElements.Floor",
+      "category": "Floors",
+      "type": "Floor: Generic 150mm",
+      "bbox": {
+        "min": {"x": 0.0, "y": 0.0, "z": 0.0},
+        "max": {"x": 10.0, "y": 10.0, "z": 0.15}
+      },
+      "parameters": {
+        "Area": {"name": "Area", "value": 100.0, "units": "m²"},
+        "Thickness": {"name": "Thickness", "value": 0.15, "units": "m"}
+      }
+    }
+  ]
+}

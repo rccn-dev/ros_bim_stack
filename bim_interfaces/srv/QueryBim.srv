@@ -1,0 +1,16 @@
+# QueryBim.srv
+# Service to query BIM objects by filter criteria
+
+# Request
+string[] categories         # Filter by categories (empty = all)
+string[] element_types      # Filter by element types (empty = all)
+float64[3] bbox_min         # Bounding box minimum [x, y, z] (optional)
+float64[3] bbox_max         # Bounding box maximum [x, y, z] (optional)
+string[] property_filters   # Property filters in format "key:value" (optional)
+
+---
+
+# Response
+BimObject[] objects         # Matching BIM objects
+bool success                # Query success status
+string message              # Error or info message
