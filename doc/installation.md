@@ -26,7 +26,7 @@ source install/setup.bash
 cd ros_bim_stack/ros_speckle_bridge
 cp .env.template .env
 # Edit .env and set SPECKLE_TOKEN
-docker-compose up --build
+docker compose up --build
 ```
 
 ## Dev Container (macOS with Colima)

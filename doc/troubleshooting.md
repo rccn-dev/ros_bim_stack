@@ -18,7 +18,7 @@ For Docker:
 ```bash
 # Edit .env file
 echo "SPECKLE_TOKEN=your_token_here" > .env
-docker-compose up
+docker compose up
 ```
 
 ### Invalid token
@@ -148,7 +148,7 @@ Container starts then stops
 **Solution:**
 ```bash
 # View logs
-docker-compose logs
+docker compose logs
 
 # Common causes:
 # - Missing SPECKLE_TOKEN
@@ -383,7 +383,7 @@ ros2 log level /speckle_bridge debug
 journalctl -u ros-speckle-bridge -f
 
 # Docker logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ## Getting Help

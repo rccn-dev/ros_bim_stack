@@ -13,25 +13,25 @@ nano .env  # Set SPECKLE_TOKEN
 ### Build and Run
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Run in Background
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### View Logs
 
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Stop
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Update Configuration
@@ -39,7 +39,7 @@ docker-compose down
 Edit `config/params.yaml`, then restart:
 
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 ## Docker Manual
@@ -317,8 +317,8 @@ spec:
 
 Docker Compose:
 ```bash
-docker-compose pull
-docker-compose up -d --no-deps --build speckle_bridge
+docker compose pull
+docker compose up -d --no-deps --build speckle_bridge
 ```
 
 #### Configuration Changes
