@@ -2,7 +2,7 @@
 # Target: ROS 2 Humble (Ubuntu 22.04) / Jazzy (Ubuntu 24.04)
 
 # Build argument for ROS distro
-ARG ROS_DISTRO=humble
+ARG ROS_DISTRO=jazzy
 
 # ==============================================================================
 # Stage 1: Builder

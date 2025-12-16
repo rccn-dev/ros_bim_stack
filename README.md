@@ -84,6 +84,6 @@ ros2 launch ros_speckle_bridge bridge.launch.py
 
 ## System Requirements
 
-- ROS 2: Humble (Ubuntu 22.04) or Jazzy (Ubuntu 24.04)
+- ROS 2: Jazzy (Ubuntu 24.04)
 - Python: 3.10+
 - Speckle account with Personal Access Token
