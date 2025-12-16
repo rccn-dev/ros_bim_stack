@@ -25,7 +25,9 @@ source install/setup.bash
 ```bash
 cd ros_bim_stack/ros_speckle_bridge
 cp .env.template .env
+cp config/params.example.yaml config/params.yaml
 # Edit .env and set SPECKLE_TOKEN
+# Edit config/params.yaml and set stream_id
 docker compose up --build
 ```
 

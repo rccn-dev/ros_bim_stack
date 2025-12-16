@@ -1,0 +1,30 @@
+/**:
+  ros__parameters:
+    # Speckle Server Configuration
+    host: "https://app.speckle.systems"
+    
+    # Target BIM Model
+    stream_id: ""  # REQUIRED: Set your Speckle stream ID here
+    commit_id: "latest"  # Use "latest" or specific commit ID
+    
+    # Coordinate System Alignment
+    # Datum offset to subtract from BIM coordinates to align with ROS map frame
+    # Example: If BIM origin is at [1000.0, 2000.0, 0.0] in world coordinates,
+    # set datum to align it with ROS map origin [0, 0, 0]
+    datum: [0.0, 0.0, 0.0]
+    
+    # Frame IDs
+    frame_id: "map"           # ROS base frame
+    bim_frame_id: "bim_origin"  # BIM reference frame
+    
+    # Category Filters
+    # allow: Only publish these categories (empty = all)
+    # deny: Never publish these categories
+    filters:
+      allow: []
+      # Example: Only walls and floors
+      # allow: ["Walls", "Floors"]
+      
+      deny: []
+      # Example: Exclude furniture and railings
+      # deny: ["Furniture", "Railings", "Plumbing Fixtures"]

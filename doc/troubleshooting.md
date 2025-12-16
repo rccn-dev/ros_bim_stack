@@ -49,6 +49,7 @@ ros2 run ros_speckle_bridge list_streams
 
 # Edit config
 nano ros_speckle_bridge/config/params.yaml
+# (If file doesn't exist, copy from params.example.yaml)
 # Set stream_id: "your_stream_id_here"
 ```
 

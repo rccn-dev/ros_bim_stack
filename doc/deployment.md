@@ -7,7 +7,9 @@
 ```bash
 cd ros_speckle_bridge
 cp .env.template .env
+cp config/params.example.yaml config/params.yaml
 nano .env  # Set SPECKLE_TOKEN
+nano config/params.yaml # Set stream_id
 ```
 
 ### Build and Run

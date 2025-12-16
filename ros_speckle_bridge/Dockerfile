@@ -28,6 +28,11 @@ RUN pip3 install --no-cache-dir \
 COPY bim_interfaces ./src/bim_interfaces
 COPY ros_speckle_bridge ./src/ros_speckle_bridge
 
+# Create default params.yaml from example if it doesn't exist
+RUN if [ ! -f ./src/ros_speckle_bridge/config/params.yaml ]; then \
+    cp ./src/ros_speckle_bridge/config/params.example.yaml ./src/ros_speckle_bridge/config/params.yaml; \
+    fi
+
 # Build workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     colcon build \
