@@ -12,6 +12,7 @@ from typing import List, Optional, Any
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from std_msgs.msg import Header
 from geometry_msgs.msg import TransformStamped
 from visualization_msgs.msg import MarkerArray
@@ -85,8 +86,11 @@ class SpeckleBridgeNode(Node):
         self.declare_parameter('stream_id', '')
         self.declare_parameter('commit_id', 'latest')
         self.declare_parameter('datum', [0.0, 0.0, 0.0])
-        self.declare_parameter('filters.allow', [])
-        self.declare_parameter('filters.deny', [])
+        
+        string_array_descriptor = ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY)
+        self.declare_parameter('filters.allow', [], string_array_descriptor)
+        self.declare_parameter('filters.deny', [], string_array_descriptor)
+        
         self.declare_parameter('frame_id', 'map')
         self.declare_parameter('bim_frame_id', 'bim_origin')
 
@@ -199,7 +203,35 @@ class SpeckleBridgeNode(Node):
         self._publish_visualization()
 
     def _extract_all_objects(self, data: Any, objects: Optional[List] = None) -> List:
-        """Recursively extract all Speckle objects from nested structure"""
+        """Recursively extract all Speckle objects from nested structure using GraphTraversal"""
+        if objects is None:
+            objects = []
+            
+        try:
+            from specklepy.objects.graph_traversal.traversal import GraphTraversal
+            from specklepy.objects import Base
+            
+            # Create traversal engine
+            traversal = GraphTraversal([])
+            
+            # Traverse and visit every object
+            for context in traversal.traverse(data):
+                obj = context.current
+                
+                # Filter out non-geometric/structural objects if needed
+                # For now, we include everything that looks like a Base object
+                if isinstance(obj, Base):
+                    objects.append(obj)
+                    
+            self.get_logger().info(f"Extracted {len(objects)} objects using GraphTraversal")
+            return objects
+            
+        except ImportError:
+            self.get_logger().warning("GraphTraversal not available, falling back to manual recursion")
+            return self._manual_extract_all_objects(data, objects)
+            
+    def _manual_extract_all_objects(self, data: Any, objects: Optional[List] = None) -> List:
+        """Recursively extract all Speckle objects from nested structure (Fallback)"""
         if objects is None:
             objects = []
         
@@ -215,9 +247,9 @@ class SpeckleBridgeNode(Node):
                     children = data[key]
                     if isinstance(children, list):
                         for child in children:
-                            self._extract_all_objects(child, objects)
+                            self._manual_extract_all_objects(child, objects)
                     else:
-                        self._extract_all_objects(children, objects)
+                        self._manual_extract_all_objects(children, objects)
         
         # Handle Speckle objects with attributes
         elif hasattr(data, '__dict__'):
@@ -231,21 +263,33 @@ class SpeckleBridgeNode(Node):
                     children = getattr(data, attr)
                     if isinstance(children, list):
                         for child in children:
-                            self._extract_all_objects(child, objects)
+                            self._manual_extract_all_objects(child, objects)
                     elif children is not None:
-                        self._extract_all_objects(children, objects)
+                        self._manual_extract_all_objects(children, objects)
         
         # Handle lists
         elif isinstance(data, list):
             for item in data:
-                self._extract_all_objects(item, objects)
+                self._manual_extract_all_objects(item, objects)
         
         return objects
 
     def _apply_filters(self, objects: List) -> List:
         """Apply category filters to object list"""
-        allow_list = self.get_parameter('filters.allow').value
-        deny_list = self.get_parameter('filters.deny').value
+        try:
+            p_allow = self.get_parameter('filters.allow')
+            self.get_logger().info(f"Parameter filters.allow: {p_allow.type_} = {p_allow.value}")
+            allow_list = p_allow.value
+        except Exception as e:
+            self.get_logger().warn(f"Error getting filters.allow: {e}. Using empty list.")
+            allow_list = []
+
+        try:
+            p_deny = self.get_parameter('filters.deny')
+            deny_list = p_deny.value
+        except Exception as e:
+            self.get_logger().warn(f"Error getting filters.deny: {e}. Using empty list.")
+            deny_list = []
         
         # If no filters, return all
         if not allow_list and not deny_list:

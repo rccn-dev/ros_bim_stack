@@ -36,8 +36,15 @@ RUN if [ ! -f ./src/ros_speckle_bridge/config/params.yaml ]; then \
 # Build workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     colcon build \
-    --cmake-args -DCMAKE_BUILD_TYPE=Release \
-    --symlink-install
+    --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+# Fix executable location for ROS 2 (ensure they are in lib/pkg)
+# Note: colcon build with symlink-install might put scripts in different places
+# We check if bin exists before copying
+RUN mkdir -p install/ros_speckle_bridge/lib/ros_speckle_bridge && \
+    if [ -d "install/ros_speckle_bridge/bin" ]; then \
+        cp install/ros_speckle_bridge/bin/* install/ros_speckle_bridge/lib/ros_speckle_bridge/; \
+    fi
 
 # ==============================================================================
 # Stage 2: Runtime

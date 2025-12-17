@@ -47,7 +47,14 @@ class SpeckleClient:
             self.account = get_account_from_token(self.token, self.host)
             self.client = SpeckleAPIClient(host=self.host)
             self.client.authenticate_with_token(self.token)
-            self.logger.info(f"Successfully authenticated as: {self.account.userInfo.email}")
+            
+            # Verify authentication
+            try:
+                user = self.client.active_user.get()
+                self.logger.info(f"Successfully authenticated as: {user.email} ({user.name})")
+            except Exception as auth_err:
+                self.logger.warning(f"Authenticated but failed to fetch user info: {auth_err}")
+                
         except Exception as e:
             self.logger.error(f"Authentication failed: {e}")
             raise RuntimeError(f"Failed to authenticate with Speckle: {e}")
@@ -63,8 +70,10 @@ class SpeckleClient:
             Stream metadata dictionary
         """
         try:
-            stream = self.client.stream.get(stream_id)
-            return stream
+            # Support for specklepy 2.19+ (Project API)
+            if hasattr(self.client, "project"):
+                return self.client.project.get(stream_id)
+            return self.client.stream.get(stream_id)
         except Exception as e:
             self.logger.error(f"Failed to fetch stream {stream_id}: {e}")
             raise
@@ -82,15 +91,29 @@ class SpeckleClient:
         """
         try:
             if commit_id == "latest":
-                stream = self.client.stream.get(stream_id)
-                commits = self.client.commit.list(stream_id, limit=1)
-                if not commits:
-                    raise ValueError(f"No commits found for stream {stream_id}")
-                commit = commits[0]
+                # Try to get "main" model versions
+                # Note: get_with_versions takes (model_id, project_id)
+                # We assume model name is "main" which is default
+                # First we need to find the model ID for "main"
+                project = self.client.project.get_with_models(stream_id)
+                main_model = next((m for m in project.models.items if m.name == "main"), None)
+                
+                if not main_model:
+                     # Fallback to first model
+                     if project.models.items:
+                         main_model = project.models.items[0]
+                     else:
+                         raise ValueError(f"No models found in project {stream_id}")
+
+                versions = self.client.version.get_versions(main_model.id, stream_id, limit=1)
+                if not versions.items:
+                     raise ValueError(f"No versions found for model '{main_model.name}' in project {stream_id}")
+                commit = versions.items[0]
             else:
-                commit = self.client.commit.get(stream_id, commit_id)
+                # version.get takes (version_id, project_id)
+                commit = self.client.version.get(commit_id, stream_id)
             
-            self.logger.info(f"Retrieved commit: {commit.id} - {commit.message}")
+            self.logger.info(f"Retrieved commit: {commit.id} - {getattr(commit, 'message', 'No message')}")
             return commit
         except Exception as e:
             self.logger.error(f"Failed to fetch commit: {e}")
@@ -112,7 +135,17 @@ class SpeckleClient:
             transport = ServerTransport(client=self.client, stream_id=stream_id)
             
             self.logger.info(f"Receiving objects from commit {commit.id}...")
-            obj = operations.receive(commit.referencedObject, transport)
+            self.logger.info(f"Commit object attributes: {dir(commit)}")
+            # Try to handle both Commit (referencedObject) and Version (referencedObject or similar)
+            ref_obj = getattr(commit, 'referencedObject', None)
+            if not ref_obj:
+                 # Try snake_case for newer specklepy versions
+                 ref_obj = getattr(commit, 'referenced_object', None)
+            
+            if not ref_obj:
+                 raise AttributeError(f"Could not find referenced object in commit/version object. Available attributes: {dir(commit)}")
+
+            obj = operations.receive(ref_obj, transport)
             self.logger.info("Objects received successfully")
             
             return obj
@@ -131,8 +164,10 @@ class SpeckleClient:
             List of stream metadata dictionaries
         """
         try:
-            streams = self.client.stream.list(limit=limit)
-            return streams
+            # Support for specklepy 2.19+ (Project API)
+            if hasattr(self.client, "active_user"):
+                 return self.client.active_user.get_projects(limit=limit).items
+            return self.client.stream.list(limit=limit)
         except Exception as e:
             self.logger.error(f"Failed to list streams: {e}")
             raise

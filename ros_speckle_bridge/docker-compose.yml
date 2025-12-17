@@ -1,5 +1,4 @@
 # Docker Compose for ROS Speckle Bridge
-version: '3.8'
 
 services:
   speckle_bridge:
@@ -18,7 +17,8 @@ services:
       - speckle_cache:/root/.ros/speckle_cache
       # Optional: Mount config for easy parameter updates
       - ./config/params.yaml:/workspace/install/ros_speckle_bridge/share/ros_speckle_bridge/config/params.yaml:ro
-    restart: unless-stopped
+    # restart: unless-stopped
+    command: ["sleep", "infinity"]
 
 volumes:
   speckle_cache:
