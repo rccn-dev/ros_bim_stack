@@ -16,6 +16,7 @@ WORKDIR /workspace
 RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
+    python3-pytest \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -80,7 +81,7 @@ ENV PYTHONUNBUFFERED=1
 ENV ROS_DOMAIN_ID=0
 
 # Entrypoint script
-COPY ros_speckle_bridge/docker-entrypoint.sh /entrypoint.sh
+COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

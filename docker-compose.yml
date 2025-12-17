@@ -3,8 +3,8 @@
 services:
   speckle_bridge:
     build:
-      context: ../
-      dockerfile: ros_speckle_bridge/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         ROS_DISTRO: humble
     container_name: ros_speckle_bridge
@@ -16,7 +16,7 @@ services:
       # Mount cache directory for offline operation
       - speckle_cache:/root/.ros/speckle_cache
       # Optional: Mount config for easy parameter updates
-      - ./config/params.yaml:/workspace/install/ros_speckle_bridge/share/ros_speckle_bridge/config/params.yaml:ro
+      - ./ros_speckle_bridge/config/params.yaml:/workspace/install/ros_speckle_bridge/share/ros_speckle_bridge/config/params.yaml:ro
     # restart: unless-stopped
     command: ["sleep", "infinity"]
 

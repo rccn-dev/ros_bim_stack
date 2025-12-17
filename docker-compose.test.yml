@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        ROS_DISTRO: humble
+    command: >
+      /bin/bash -c "
+      source /opt/ros/humble/setup.bash &&
+      colcon build &&
+      source install/setup.bash &&
+      colcon test --packages-select ros_speckle_bridge &&
+      colcon test-result --verbose
+      "
+    volumes:
+      - ./ros_speckle_bridge:/workspace/src/ros_speckle_bridge
+      - ./bim_interfaces:/workspace/src/bim_interfaces
