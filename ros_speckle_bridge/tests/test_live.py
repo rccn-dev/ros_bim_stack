@@ -1,6 +1,41 @@
 import pytest
 import os
+import yaml
+from pathlib import Path
 from ros_speckle_bridge.speckle_client import SpeckleClient
+
+def get_speckle_host():
+    """
+    Determine Speckle host from:
+    1. Environment variable SPECKLE_HOST
+    2. params.yaml configuration
+    3. Default fallback
+    """
+    # 1. Try env var
+    env_host = os.getenv("SPECKLE_HOST")
+    if env_host:
+        return env_host
+        
+    # 2. Try params.yaml
+    try:
+        # Assuming this test file is in tests/ and config is in ../config/
+        current_dir = Path(__file__).parent
+        config_path = current_dir.parent / "config" / "params.yaml"
+        
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                # Navigate: /** -> ros__parameters -> host
+                # Note: yaml.safe_load might return None for empty file
+                if config:
+                    host = config.get('/**', {}).get('ros__parameters', {}).get('host')
+                    if host:
+                        return host
+    except Exception as e:
+        print(f"Warning: Could not read params.yaml: {e}")
+        
+    # 3. Default
+    return "https://app.speckle.systems"
 
 # Only run these tests if a real token is present in the environment
 @pytest.mark.skipif(
@@ -13,7 +48,8 @@ class TestLiveConnection:
         """
         Real network test: Can we actually authenticate with Speckle?
         """
-        host = os.getenv("SPECKLE_HOST", "https://app.speckle.systems")
+        host = get_speckle_host()
+        print(f"\nConnecting to Speckle Host: {host}")
         
         # Initialize client (will use SPECKLE_TOKEN from env)
         client = SpeckleClient(host=host)
@@ -23,7 +59,7 @@ class TestLiveConnection:
         
         assert user is not None
         assert user.email is not None
-        print(f"\nSuccessfully authenticated as: {user.name} ({user.email})")
+        print(f"Successfully authenticated as: {user.name} ({user.email})")
 
     def test_fetch_public_stream(self):
         """
@@ -35,7 +71,7 @@ class TestLiveConnection:
         if not stream_id:
             pytest.skip("TEST_STREAM_ID not set. Skipping live stream fetch.")
             
-        host = os.getenv("SPECKLE_HOST", "https://app.speckle.systems")
+        host = get_speckle_host()
         client = SpeckleClient(host=host)
         
         # Try to get the stream/project

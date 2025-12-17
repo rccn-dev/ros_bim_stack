@@ -3,6 +3,12 @@
 
 cd "$(dirname "$0")"
 
+# Load .env file if it exists
+if [ -f .env ]; then
+    echo "📄 Loading environment from .env..."
+    export $(grep -v '^#' .env | xargs)
+fi
+
 echo "🚀 Building and running tests..."
 
 # Check if user wants to run live tests
