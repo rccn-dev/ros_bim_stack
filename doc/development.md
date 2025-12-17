@@ -30,7 +30,21 @@ colcon build --symlink-install
 
 ## Testing
 
-### Run All Tests
+### Docker-based Testing (Recommended)
+
+The project includes a convenience script to run tests in a Docker container. This ensures a consistent environment and handles dependencies automatically.
+
+```bash
+./run_tests.sh
+```
+
+This script will:
+1.  Build the test container.
+2.  Run unit tests.
+3.  Run integration tests (mocked).
+4.  Run live tests (if `SPECKLE_TOKEN` and `TEST_STREAM_ID` are set).
+
+### Run All Tests (Local)
 
 ```bash
 colcon test

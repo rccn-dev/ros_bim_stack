@@ -21,19 +21,52 @@ ros_bim_stack/
 │   └── srv/
 │       └── QueryBim.srv
 │
-└── ros_speckle_bridge/      # Python package - Speckle driver
-    ├── config/
-    │   └── params.yaml
-    ├── launch/
-    │   └── bridge.launch.py
-    └── ros_speckle_bridge/
-        ├── bridge_node.py
-        ├── speckle_client.py
-        ├── converter.py
-        └── cache_manager.py
+├── ros_speckle_bridge/      # Python package - Speckle driver
+│   ├── config/
+│   │   └── params.yaml
+│   ├── launch/
+│   │   └── bridge.launch.py
+│   └── ros_speckle_bridge/
+│       ├── bridge_node.py
+│       ├── speckle_client.py
+│       ├── converter.py
+│       └── cache_manager.py
+│
+├── Dockerfile               # Multi-stage Docker build
+├── docker-compose.yml       # Production deployment
+├── docker-compose.test.yml  # Test runner configuration
+└── run_tests.sh             # Test execution script
 ```
 
 ## Quick Start
+
+### Using Docker (Recommended)
+
+The easiest way to run the project is using Docker Compose.
+
+1.  **Configure Environment**
+    ```bash
+    cp .env.template .env
+    # Edit .env with your SPECKLE_TOKEN
+    ```
+
+2.  **Configure Bridge**
+    ```bash
+    # Edit stream_id in params.yaml
+    nano ros_speckle_bridge/config/params.yaml
+    ```
+
+3.  **Run Tests**
+    ```bash
+    ./run_tests.sh
+    ```
+
+4.  **Start Bridge**
+    ```bash
+    docker-compose up --build
+    ```
+
+### Manual Installation
 
 ```bash
 # Set Speckle token
@@ -57,7 +90,7 @@ ros2 launch ros_speckle_bridge bridge.launch.py
 ```
 
 ## ROS Interface
-
+Humble (Ubuntu 22.04) or 
 ### Topics
 
 - `/bim/objects` - `bim_interfaces/BimObject` - Individual BIM elements

@@ -18,7 +18,7 @@ services:
       # Optional: Mount config for easy parameter updates
       - ./ros_speckle_bridge/config/params.yaml:/workspace/install/ros_speckle_bridge/share/ros_speckle_bridge/config/params.yaml:ro
     # restart: unless-stopped
-    command: ["sleep", "infinity"]
+    command: ros2 launch ros_speckle_bridge bridge.launch.py
 
 volumes:
   speckle_cache:

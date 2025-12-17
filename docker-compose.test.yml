@@ -8,6 +8,10 @@ services:
       target: builder
       args:
         ROS_DISTRO: humble
+    environment:
+      - SPECKLE_TOKEN=${SPECKLE_TOKEN:-dummy_token_for_tests}
+      - TEST_STREAM_ID=${TEST_STREAM_ID}
+      - SPECKLE_HOST=${SPECKLE_HOST:-https://app.speckle.systems}
     command: >
       /bin/bash -c "
       source /opt/ros/humble/setup.bash &&
