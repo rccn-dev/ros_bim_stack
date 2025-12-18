@@ -1,0 +1,7 @@
+# Request to fetch a specific stream/commit from Speckle
+string stream_id
+string commit_id "latest"
+---
+bool success
+string message
+int32 object_count

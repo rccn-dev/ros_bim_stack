@@ -22,6 +22,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BimObject.msg"
   "msg/BimPartition.msg"
   "srv/QueryBim.srv"
+  "srv/FetchStream.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
