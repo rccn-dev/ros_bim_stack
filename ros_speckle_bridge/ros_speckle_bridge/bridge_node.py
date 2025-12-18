@@ -19,7 +19,7 @@ from visualization_msgs.msg import MarkerArray
 from tf2_ros import StaticTransformBroadcaster
 
 from bim_interfaces.msg import BimObject
-from bim_interfaces.srv import QueryBim
+from bim_interfaces.srv import QueryBim, FetchStream
 
 from .speckle_client import SpeckleClient
 from .converter import Converter
@@ -65,6 +65,12 @@ class SpeckleBridgeNode(Node):
             self.handle_query
         )
         
+        self.fetch_service = self.create_service(
+            FetchStream,
+            '/bim/fetch',
+            self.handle_fetch
+        )
+        
         # Internal state
         self.bim_objects: List[BimObject] = []
         self.raw_data: Optional[Any] = None
@@ -93,6 +99,7 @@ class SpeckleBridgeNode(Node):
         
         self.declare_parameter('frame_id', 'map')
         self.declare_parameter('bim_frame_id', 'bim_origin')
+        self.declare_parameter('auto_fetch', True)
 
     def initialize(self):
         """Initialize Speckle client and fetch data"""
@@ -105,19 +112,22 @@ class SpeckleBridgeNode(Node):
             frame_id = self.get_parameter('frame_id').value
             bim_frame_id = self.get_parameter('bim_frame_id').value
             
-            # Validate required parameters
-            if not stream_id:
-                self.get_logger().fatal("Parameter 'stream_id' is required but not set!")
-                raise ValueError("stream_id parameter is required")
-            
             # Initialize converter
             self.converter = Converter(frame_id=frame_id, datum=datum)
             
             # Publish static transform from map to bim_origin
             self._publish_static_transform(frame_id, bim_frame_id, datum)
             
+            # Initialize Speckle Client (uses SPECKLE_TOKEN from env)
+            try:
+                self.speckle_client = SpeckleClient(host=host)
+                self.get_logger().info(f"Speckle client initialized for host: {host}")
+            except Exception as e:
+                self.get_logger().warn(f"Speckle client initialization failed: {e}. Will rely on cache if available.")
+
             # Try to load from cache first
-            cached_data = self.cache_manager.load_cache(stream_id, commit_id)
+            cached_data = self.cache_manager.load_cache(stream_id, commit_id) if stream_id else None
+            auto_fetch = self.get_parameter('auto_fetch').value
             
             if cached_data:
                 self.get_logger().info("Loading BIM data from cache...")
@@ -125,34 +135,56 @@ class SpeckleBridgeNode(Node):
                 self._process_data(cached_data)
                 
                 # Try to update cache in background if online
-                try:
-                    self.speckle_client = SpeckleClient(host=host)
-                    if self.speckle_client.is_online():
-                        self.get_logger().info("Online - updating cache...")
-                        self._fetch_and_cache_data(stream_id, commit_id)
-                except Exception as e:
-                    self.get_logger().warn(f"Could not update cache: {e}")
-            else:
-                # No cache - must be online
-                self.get_logger().info("No cache found - fetching from Speckle...")
-                
-                # Check for SPECKLE_TOKEN
-                if not os.getenv("SPECKLE_TOKEN"):
-                    self.get_logger().fatal(
-                        "SPECKLE_TOKEN environment variable not set and no cache available!"
-                    )
-                    raise RuntimeError("SPECKLE_TOKEN required when no cache exists")
-                
-                self.speckle_client = SpeckleClient(host=host)
+                if self.speckle_client and auto_fetch:
+                    self.get_logger().info("Online - checking for updates...")
+                    self._fetch_and_cache_data(stream_id, commit_id)
+            elif stream_id and auto_fetch:
+                # No cache - must fetch
+                if not self.speckle_client:
+                    self.get_logger().fatal("No cache and no Speckle client (check SPECKLE_TOKEN)!")
+                    return
+
+                self.get_logger().info(f"Fetching stream {stream_id} from Speckle...")
                 self._fetch_and_cache_data(stream_id, commit_id)
+            else:
+                self.get_logger().info("Auto-fetch disabled or no stream_id. Waiting for service call...")
             
             self.get_logger().info(
                 f"Initialized successfully with {len(self.bim_objects)} BIM objects"
             )
             
         except Exception as e:
-            self.get_logger().fatal(f"Initialization failed: {e}")
-            raise
+            self.get_logger().error(f"Initialization failed: {e}")
+
+    def handle_fetch(self, request: FetchStream.Request, response: FetchStream.Response):
+        """Handle request to fetch a specific stream"""
+        try:
+            stream_id = request.stream_id
+            commit_id = request.commit_id
+            
+            if not stream_id:
+                response.success = False
+                response.message = "stream_id is required"
+                return response
+
+            if not self.speckle_client:
+                response.success = False
+                response.message = "Speckle client not initialized (check SPECKLE_TOKEN)"
+                return response
+
+            self.get_logger().info(f"Manual fetch requested for stream: {stream_id}")
+            self._fetch_and_cache_data(stream_id, commit_id)
+            
+            response.success = True
+            response.message = f"Successfully fetched {len(self.bim_objects)} objects"
+            response.object_count = len(self.bim_objects)
+            
+        except Exception as e:
+            self.get_logger().error(f"Fetch failed: {e}")
+            response.success = False
+            response.message = str(e)
+            
+        return response
 
     def _fetch_and_cache_data(self, stream_id: str, commit_id: str):
         """Fetch data from Speckle and update cache"""

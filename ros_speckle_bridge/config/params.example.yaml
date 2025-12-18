@@ -6,6 +6,7 @@
     # Target BIM Model
     stream_id: ""  # REQUIRED: Set your Speckle stream ID here
     commit_id: "latest"  # Use "latest" or specific commit ID
+    auto_fetch: true     # Automatically fetch on startup
     
     # Coordinate System Alignment
     # Datum offset to subtract from BIM coordinates to align with ROS map frame
