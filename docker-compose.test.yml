@@ -12,6 +12,7 @@ services:
       - SPECKLE_TOKEN=${SPECKLE_TOKEN:-dummy_token_for_tests}
       - TEST_STREAM_ID=${TEST_STREAM_ID}
       - SPECKLE_HOST=${SPECKLE_HOST:-https://app.speckle.systems}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
     command: >
       /bin/bash -c "
       source /opt/ros/humble/setup.bash &&
@@ -23,3 +24,20 @@ services:
     volumes:
       - ./ros_speckle_bridge:/workspace/src/ros_speckle_bridge
       - ./bim_interfaces:/workspace/src/bim_interfaces
+
+  recorder:
+    image: ros:humble-ros-base
+    container_name: test_recorder
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+    volumes:
+      - ./test_results/bags:/workspace/bags
+    command: >
+      /bin/bash -c "
+      source /opt/ros/humble/setup.bash &&
+      mkdir -p /workspace/bags &&
+      ros2 bag record -a -o /workspace/bags/test_run_$(date +%Y%m%d_%H%M%S)
+      "
+    profiles:
+      - record

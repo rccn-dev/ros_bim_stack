@@ -12,6 +12,7 @@ services:
     environment:
       - SPECKLE_TOKEN=${SPECKLE_TOKEN}
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
     volumes:
       # Mount cache directory for offline operation
       - speckle_cache:/root/.ros/speckle_cache
@@ -19,6 +20,22 @@ services:
       - ./ros_speckle_bridge/config/params.yaml:/workspace/install/ros_speckle_bridge/share/ros_speckle_bridge/config/params.yaml:ro
     # restart: unless-stopped
     command: ros2 launch ros_speckle_bridge bridge.launch.py
+
+  foxglove_bridge:
+    image: ros:humble-ros-base
+    container_name: foxglove_bridge
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+    command: >
+      /bin/bash -c "
+      apt-get update && apt-get install -y ros-humble-foxglove-bridge &&
+      source /opt/ros/humble/setup.bash &&
+      ros2 launch foxglove_bridge foxglove_bridge_launch.xml
+      "
+    restart: unless-stopped
+    profiles:
+      - viz
 
 volumes:
   speckle_cache:

@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-colcon-common-extensions \
     python3-pytest \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -58,6 +59,7 @@ WORKDIR /workspace
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     python3-pip \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (runtime only)
