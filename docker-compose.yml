@@ -1,4 +1,4 @@
-# Docker Compose for ROS Speckle Bridge
+# Docker Compose for ROS BIM stack
 
 services:
   speckle_bridge:

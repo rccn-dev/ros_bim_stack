@@ -3,6 +3,23 @@
 
 cd "$(dirname "$0")"
 
+# Determine Docker Compose command
+if command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo "❌ Docker Compose not found. Please install Docker Compose."
+    exit 1
+fi
+
+# Determine if sudo is needed for Docker
+if docker version > /dev/null 2>&1; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
 # Load .env file if it exists
 if [ -f .env ]; then
     echo "📄 Loading environment from .env..."
@@ -21,4 +38,4 @@ fi
 # Pass environment variables to docker-compose
 SPECKLE_TOKEN=${SPECKLE_TOKEN} \
 TEST_STREAM_ID=${TEST_STREAM_ID} \
-docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test
+$SUDO $DOCKER_COMPOSE -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test
