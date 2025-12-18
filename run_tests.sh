@@ -28,6 +28,13 @@ fi
 
 echo "🚀 Building and running tests..."
 
+# Check for recording flag
+RECORD_FLAG=""
+if [[ "$*" == *"--record"* ]]; then
+    echo "📹 Recording test run to test_results/bags..."
+    RECORD_FLAG="--profile record"
+fi
+
 # Check if user wants to run live tests
 if [ -z "$SPECKLE_TOKEN" ]; then
     echo "ℹ️  SPECKLE_TOKEN not set. Live tests will be skipped."
@@ -38,4 +45,5 @@ fi
 # Pass environment variables to docker-compose
 SPECKLE_TOKEN=${SPECKLE_TOKEN} \
 TEST_STREAM_ID=${TEST_STREAM_ID} \
-$SUDO $DOCKER_COMPOSE -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test
+RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp} \
+$SUDO $DOCKER_COMPOSE -f docker-compose.test.yml $RECORD_FLAG up --build --abort-on-container-exit --exit-code-from test
