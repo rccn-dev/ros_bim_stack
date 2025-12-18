@@ -98,6 +98,51 @@ ros2 launch ros_speckle_bridge bridge.launch.py
 ### Empty RViz markers
 
 **Symptom:**
+RViz is running but no markers appear on the screen.
+
+**Solution:**
+1.  **Check Topic**: Verify data is being published: `ros2 topic hz /bim/visualization`.
+2.  **Fixed Frame**: Ensure RViz **Fixed Frame** is set to `map` (or your configured `frame_id`).
+3.  **Add Display**: Ensure you have added a **MarkerArray** display and set its topic to `/bim/visualization`.
+
+### Markers not appearing on remote machine (e.g., macOS)
+
+**Symptom:**
+Bridge is running on Linux, RViz is running on macOS, but no topics are visible.
+
+**Solution:**
+1.  **Middleware Match**: Ensure both machines use the same RMW. We recommend CycloneDDS:
+    ```bash
+    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    ```
+2.  **Domain ID**: Ensure both machines use the same `ROS_DOMAIN_ID`.
+3.  **Firewall**: On the Linux host, allow UDP traffic:
+    ```bash
+    sudo ufw allow proto udp from any to any port 7400:7500
+    ```
+
+## Docker Issues
+
+### Permission Denied
+
+**Symptom:**
+```
+docker: permission denied while trying to connect to the Docker daemon socket
+```
+
+**Solution:**
+The `run_tests.sh` script automatically handles `sudo` if needed. If running manually, use `sudo docker compose`.
+
+### Foxglove Bridge not starting
+
+**Symptom:**
+`foxglove_bridge` container is not created.
+
+**Solution:**
+Foxglove is disabled by default. Use the `viz` profile:
+```bash
+docker compose --profile viz up
+```
 No markers visible in RViz
 
 **Checklist:**

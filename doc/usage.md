@@ -11,21 +11,39 @@ With custom config:
 ros2 launch ros_speckle_bridge bridge.launch.py config_file:=/path/to/custom_params.yaml
 ```
 
-## Visualization in RViz
-
+With RViz enabled (requires local ROS installation):
 ```bash
-rviz2
+ros2 launch ros_speckle_bridge bridge.launch.py rviz:=true
 ```
 
-Configuration:
-1. Set **Fixed Frame** to `map`
-2. Add **MarkerArray** display
-3. Set topic to `/bim/visualization`
-4. Adjust marker display properties as needed
+## Visualization
 
-## Query BIM Objects
+### RViz (Native)
 
-### Service Call Examples
+If running RViz on a remote machine (e.g., macOS with RoboStack):
+1. Set `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` on both machines.
+2. Set the same `ROS_DOMAIN_ID`.
+3. Open RViz: `rviz2 -d $(ros2 pkg prefix ros_speckle_bridge)/share/ros_speckle_bridge/rviz/default.rviz`
+
+### Foxglove Studio (Web)
+
+To use the web-based visualizer (optional):
+```bash
+docker compose --profile viz up
+```
+Then connect [Foxglove Studio](https://app.foxglove.dev) to `ws://localhost:8765`.
+
+## Query & Fetch BIM Objects
+
+### Fetch a Stream (Manual Trigger)
+
+Trigger a fetch for a specific stream or update the current one:
+```bash
+ros2 service call /bim/fetch bim_interfaces/srv/FetchStream \
+  "{stream_id: '21940b5b64', commit_id: 'latest'}"
+```
+
+### Query BIM Objects
 
 Query all walls:
 ```bash

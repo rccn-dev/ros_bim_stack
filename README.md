@@ -89,6 +89,37 @@ nano src/ros_bim_stack/ros_speckle_bridge/config/params.yaml  # Set stream_id
 ros2 launch ros_speckle_bridge bridge.launch.py
 ```
 
+## Visualization & Networking
+
+This stack supports multiple ways to visualize BIM data, depending on your environment.
+
+### 1. Foxglove Studio (Web-based, Headless-friendly)
+The easiest way to visualize data without a local ROS installation.
+- Run the bridge with the visualization profile: `docker compose --profile viz up`
+- Open [Foxglove Studio](https://app.foxglove.dev)
+- Connect to `ws://localhost:8765`
+
+### 2. RViz (Native ROS)
+If you have ROS 2 installed locally (or via RoboStack on macOS):
+- Run the bridge: `docker compose up`
+- Run RViz: `ros2 launch ros_speckle_bridge bridge.launch.py rviz:=true`
+
+### 3. Cross-Machine Networking (e.g., macOS to Linux)
+If running RViz on a different machine, we recommend using **CycloneDDS** for better stability:
+
+**On the Linux Host:**
+```bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+docker compose up
+```
+
+**On the Remote Machine (macOS/RoboStack):**
+```bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=0
+rviz2
+```
+
 ## ROS Interface
 Humble (Ubuntu 22.04) or 
 ### Topics
@@ -99,6 +130,7 @@ Humble (Ubuntu 22.04) or
 ### Services
 
 - `/bim/query` - `bim_interfaces/QueryBim` - Query objects by filter
+- `/bim/fetch` - `bim_interfaces/FetchStream` - Manually trigger a fetch from Speckle
 
 ### TF Frames
 

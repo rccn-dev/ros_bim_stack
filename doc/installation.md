@@ -23,11 +23,18 @@ source install/setup.bash
 ## Docker Build
 
 ```bash
-cd ros_bim_stack/ros_speckle_bridge
+# Copy environment template
 cp .env.template .env
-cp config/params.example.yaml config/params.yaml
-# Edit .env and set SPECKLE_TOKEN
+
+# Edit .env and set:
+# - SPECKLE_TOKEN
+# - SPECKLE_HOST (if not default)
+# - RMW_IMPLEMENTATION (e.g., rmw_cyclonedds_cpp for macOS/remote)
+
 # Edit config/params.yaml and set stream_id
+nano ros_speckle_bridge/config/params.yaml
+
+# Start the bridge
 docker compose up --build
 ```
 

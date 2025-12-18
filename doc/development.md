@@ -38,11 +38,16 @@ The project includes a convenience script to run tests in a Docker container. Th
 ./run_tests.sh
 ```
 
-This script will:
-1.  Build the test container.
-2.  Run unit tests.
-3.  Run integration tests (mocked).
-4.  Run live tests (if `SPECKLE_TOKEN` and `TEST_STREAM_ID` are set).
+**Options:**
+- `--record`: Records the test run to a ROS bag in `test_results/bags/`.
+
+The script will:
+1.  Automatically detect `docker compose` or `docker-compose`.
+2.  Check if `sudo` is required for Docker.
+3.  Build the test container.
+4.  Run unit tests.
+5.  Run integration tests (mocked).
+6.  Run live tests (if `SPECKLE_TOKEN` and `TEST_STREAM_ID` are set).
 
 ### Run All Tests (Local)
 

@@ -1,14 +1,19 @@
 # Configuration Guide
 
-## Authentication
+## Authentication & Middleware
 
-Set Speckle Personal Access Token as environment variable:
+Sensitive settings and networking configuration should be set via environment variables or the `.env` file.
 
-```bash
-export SPECKLE_TOKEN="your_personal_access_token"
-```
+### Environment Variables
 
-Get your token from: https://app.speckle.systems/profile
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPECKLE_TOKEN` | Your Speckle Personal Access Token | (Required) |
+| `SPECKLE_HOST` | Speckle server URL | `https://app.speckle.systems` |
+| `ROS_DOMAIN_ID` | ROS 2 Domain ID for network isolation | `0` |
+| `RMW_IMPLEMENTATION` | DDS Middleware (`rmw_fastrtps_cpp` or `rmw_cyclonedds_cpp`) | `rmw_fastrtps_cpp` |
+
+> **Tip:** Use `rmw_cyclonedds_cpp` for better stability when connecting between different OSs (e.g., Linux Docker to macOS RViz).
 
 ## Parameters
 
@@ -20,11 +25,14 @@ Edit `ros_speckle_bridge/config/params.yaml`:
     # Speckle server URL
     host: "https://app.speckle.systems"
     
-    # Target BIM model (required)
+    # Target BIM model (required for auto-fetch)
     stream_id: ""
     
     # Commit version ("latest" or specific commit ID)
     commit_id: "latest"
+
+    # Automatically fetch the model on startup
+    auto_fetch: true
     
     # Coordinate alignment offset [x, y, z]
     # Subtracted from BIM coordinates to align with ROS map origin

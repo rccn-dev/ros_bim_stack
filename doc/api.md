@@ -74,6 +74,31 @@ ros2 service call /bim/query bim_interfaces/srv/QueryBim \
   "{categories: ['Walls', 'Floors']}"
 ```
 
+### /bim/fetch
+
+Manually trigger a fetch from Speckle.
+
+**Service Type:** `bim_interfaces/srv/FetchStream`
+
+**Request:**
+```
+string stream_id            # The stream identifier
+string commit_id "latest"   # The commit ID or "latest"
+```
+
+**Response:**
+```
+bool success                # Fetch success status
+string message              # Error or info message
+int32 object_count          # Number of objects retrieved
+```
+
+**Example:**
+```bash
+ros2 service call /bim/fetch bim_interfaces/srv/FetchStream \
+  "{stream_id: '21940b5b64', commit_id: 'latest'}"
+```
+
 ## TF Frames
 
 ### Static Transforms
@@ -91,8 +116,9 @@ Transform parameters:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `host` | string | `https://app.speckle.systems` | Speckle server URL |
-| `stream_id` | string | `""` | Target stream ID (required) |
+| `stream_id` | string | `""` | Target stream ID (required for auto-fetch) |
 | `commit_id` | string | `"latest"` | Commit version or "latest" |
+| `auto_fetch` | bool | `true` | Automatically fetch on startup |
 | `datum` | double[3] | `[0.0, 0.0, 0.0]` | Coordinate offset [x, y, z] |
 | `frame_id` | string | `"map"` | ROS base frame |
 | `bim_frame_id` | string | `"bim_origin"` | BIM reference frame |
