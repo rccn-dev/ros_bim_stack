@@ -1,7 +1,8 @@
 #!/bin/bash
 # Run tests using Docker
 
-cd "$(dirname "$0")"
+# Navigate to project root
+cd "$(dirname "$0")/.."
 
 # Determine Docker Compose command
 if command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then

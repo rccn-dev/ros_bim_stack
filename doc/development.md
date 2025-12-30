@@ -35,7 +35,7 @@ colcon build --symlink-install
 The project includes a convenience script to run tests in a Docker container. This ensures a consistent environment and handles dependencies automatically.
 
 ```bash
-./run_tests.sh
+./scripts/run_tests.sh
 ```
 
 **Options:**

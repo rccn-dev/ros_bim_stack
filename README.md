@@ -19,24 +19,48 @@ ros_bim_stack/
 │   │   ├── BimObject.msg
 │   │   └── BimPartition.msg
 │   └── srv/
-│       └── QueryBim.srv
+│       ├── QueryBim.srv
+│       └── FetchStream.srv
 │
 ├── ros_speckle_bridge/      # Python package - Speckle driver
 │   ├── config/
 │   │   └── params.yaml
 │   ├── launch/
 │   │   └── bridge.launch.py
-│   └── ros_speckle_bridge/
-│       ├── bridge_node.py
-│       ├── speckle_client.py
-│       ├── converter.py
-│       └── cache_manager.py
+│   ├── ros_speckle_bridge/
+│   │   ├── bridge_node.py
+│   │   ├── speckle_client.py
+│   │   ├── converter.py
+│   │   ├── cache_manager.py
+│   │   └── plugins/          # 🆕 Plugin system
+│   │       ├── base.py       # Plugin interface
+│   │       ├── loader.py     # Plugin loader
+│   │       └── mesh_exporter.py  # Built-in mesh export plugin
+│   └── tests/
+│
+├── examples/                 # 🆕 Integration examples
+│   └── gazebo_integration/   # Gazebo Harmonic demo
+│       ├── ros_speckle_gazebo/
+│       │   └── gazebo_spawner.py  # Gazebo spawner plugin
+│       ├── config/
+│       ├── docker-compose.yml
+│       └── README.md
 │
 ├── Dockerfile               # Multi-stage Docker build
 ├── docker-compose.yml       # Production deployment
-├── docker-compose.test.yml  # Test runner configuration
-└── run_tests.sh             # Test execution script
+└── scripts/                 # Helper scripts
+    └── run_tests.sh         # Test execution script
 ```
+
+### Plugin Architecture
+
+The bridge now supports **extensible output plugins** to keep the core package lightweight while enabling integration with various simulators and tools:
+
+- **Core Package**: No simulation dependencies
+- **Plugins**: Optional, loaded dynamically based on configuration
+- **Examples**: Integration examples live in `examples/` directory
+
+See [Plugin Development Guide](doc/extending.md) for creating custom plugins.
 
 ## Quick Start
 
@@ -58,7 +82,7 @@ The easiest way to run the project is using Docker Compose.
 
 3.  **Run Tests**
     ```bash
-    ./run_tests.sh
+    ./scripts/run_tests.sh
     ```
 
 4.  **Start Bridge**
@@ -104,7 +128,24 @@ If you have ROS 2 installed locally (or via RoboStack on macOS):
 - Run the bridge: `docker compose up`
 - Run RViz: `ros2 launch ros_speckle_bridge bridge.launch.py rviz:=true`
 
-### 3. Cross-Machine Networking (e.g., macOS to Linux)
+### 3. Simulation Integration
+
+The bridge can export BIM data to various simulators via plugins:
+
+**Gazebo Harmonic** (Modern Gazebo):
+```bash
+cd examples/gazebo_integration
+./run_demo.sh
+```
+
+See [examples/gazebo_integration](examples/gazebo_integration/README.md) for details.
+
+**Other Simulators:**
+- [NVIDIA Isaac Sim](examples/isaac_sim_integration/README.md) *(coming soon)*
+- [Unity](examples/unity_integration/README.md) *(coming soon)*
+- Create your own - see [Plugin Development](doc/extending.md)
+
+### 4. Cross-Machine Networking (e.g., macOS to Linux)
 If running RViz on a different machine, we recommend using **CycloneDDS** for better stability:
 
 **On the Linux Host:**
