@@ -1,0 +1,25 @@
+# Plugin Configuration for Gazebo Integration
+# Simple, clean configuration using short plugin names
+
+plugins:
+  # Mesh Exporter - exports geometry to DAE files for Gazebo
+  - type: mesh_exporter
+    enabled: true
+    config:
+      output_path: /shared_meshes
+      format: dae  # Options: dae, obj, stl, usd
+      export_metadata: true
+  
+  # Gazebo Spawner - spawns entities in Gazebo Harmonic simulator
+  # External plugin loaded from file (until moved to built-in)
+  - type: /workspace/examples/gazebo_integration/ros_speckle_gazebo/gazebo_spawner.py:GazeboSpawnerPlugin
+    enabled: true
+    config:
+      spawn_service: /world/default/create
+      mesh_path: /shared_meshes
+      frame_id: world
+      default_physics:
+        static: false
+        mass: 100.0
+        friction: 0.8
+        restitution: 0.3

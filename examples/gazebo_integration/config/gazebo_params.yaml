@@ -1,0 +1,24 @@
+/**:
+  ros__parameters:
+    # Speckle configuration
+    host: "https://bim.rccn.dev"
+    stream_id: ""  # Set via environment variable
+    commit_id: "latest"
+    
+    # Coordinate system
+    datum: [0.0, 0.0, 0.0]
+    frame_id: "map"
+    bim_frame_id: "bim_origin"
+    
+    # Behavior
+    auto_fetch: true
+    
+    # Filters (empty = allow all)
+    filters:
+      allow: []
+      deny: []
+    
+    # Plugin configuration
+    # Note: Complex plugin configs are loaded from plugins.yaml file
+    # Set this to the path of your plugins configuration file
+    plugins_file: /config_override/plugins.yaml

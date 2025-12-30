@@ -1,0 +1,5 @@
+# Exported mesh files from BIM data
+meshes/
+
+# Environment configuration
+.env

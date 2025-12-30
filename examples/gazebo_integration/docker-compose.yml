@@ -1,0 +1,56 @@
+# Docker Compose for Gazebo Harmonic Integration Example
+
+services:
+  # Speckle Bridge with Mesh Export + Gazebo Spawner
+  speckle_bridge:
+    extends:
+      file: ../../docker-compose.yml
+      service: speckle_bridge
+    container_name: ros_speckle_bridge_gazebo
+    volumes:
+      - ./meshes:/shared_meshes
+      - ./config:/config_override
+      - ./ros_speckle_gazebo:/workspace/examples/gazebo_integration/ros_speckle_gazebo
+      # Mount source code for hot-reloading and ensuring latest changes are used
+      - ../../ros_speckle_bridge/ros_speckle_bridge:/workspace/install/ros_speckle_bridge/lib/python3.10/site-packages/ros_speckle_bridge
+    environment:
+      - SPECKLE_TOKEN=${SPECKLE_TOKEN}
+      - SPECKLE_STREAM_ID=${SPECKLE_STREAM_ID}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///config_override/cyclonedds.xml
+    command: >
+      ros2 run ros_speckle_bridge bridge_node
+      --ros-args
+      --params-file /config_override/gazebo_params.yaml
+      -p stream_id:=${SPECKLE_STREAM_ID}
+
+  # Gazebo Harmonic Simulator (Headless)
+  gazebo:
+    image: osrf/ros:humble-desktop-full
+    container_name: gazebo_harmonic_headless
+    network_mode: host  # Required for DDS discovery
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///config_override/cyclonedds.xml
+      - GZ_PARTITION=${GZ_PARTITION:-default}
+      - LIBGL_ALWAYS_SOFTWARE=1  # Software rendering for headless
+    volumes:
+      - ./config:/config_override:ro
+      - ./meshes:/shared_meshes:ro
+      - ./worlds:/worlds:ro
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y ros-humble-ros-gz ros-humble-rmw-cyclonedds-cpp &&
+        source /opt/ros/humble/setup.bash &&
+        ign gazebo -r -s -v 4 empty.sdf
+      "
+    depends_on:
+      - speckle_bridge
+
+volumes:
+  speckle_cache:
+    driver: local
+    name: speckle_cache
+
