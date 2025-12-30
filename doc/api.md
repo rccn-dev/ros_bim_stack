@@ -16,10 +16,15 @@
 ```
 std_msgs/Header header
 string uuid                    # Unique identifier (Speckle object ID)
+string speckle_type            # Precise type (e.g., "Objects.BuiltElements.Wall:Standard")
+string application_id          # ID in original software (e.g., Revit Element ID)
+string parent_id               # UUID of the container object
+string name                    # Object name
 string category                # BIM category (e.g., "Walls", "Floors")
 string element_type            # Element type (e.g., "Basic Wall: Generic 200mm")
 geometry_msgs/Pose pose        # Position and orientation in ROS frame
 geometry_msgs/Vector3 scale    # Bounding box dimensions [x, y, z]
+float64[] geometry             # Flattened vertex list [x1, y1, z1, ...]
 Property[] parameters          # Array of BIM properties
 ```
 

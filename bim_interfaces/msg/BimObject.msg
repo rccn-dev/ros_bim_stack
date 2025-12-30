@@ -11,6 +11,7 @@ string element_type                 # Specific type (e.g., "Basic Wall: Generic 
 # Spatial Transform
 geometry_msgs/Pose pose             # Position and orientation in ROS frame
 geometry_msgs/Vector3 scale         # Bounding box dimensions (x, y, z)
+float64[] geometry                  # Flattened vertex list [x1, y1, z1, ...]
 
 # Metadata
 Property[] parameters               # All BIM properties/parameters

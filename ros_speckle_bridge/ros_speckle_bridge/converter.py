@@ -159,6 +159,9 @@ class Converter:
             # Extract and transform geometry
             msg.pose, msg.scale = self._extract_geometry(speckle_obj)
             
+            # Extract mesh geometry (vertices relative to pose)
+            msg.geometry = self._extract_mesh_geometry(speckle_obj, msg.pose.position)
+            
             # Extract properties
             msg.parameters = self.extract_properties(speckle_obj)
             
@@ -167,6 +170,76 @@ class Converter:
         except Exception as e:
             self.logger.error(f"Failed to convert Speckle object: {e}")
             return None
+
+    def _extract_mesh_geometry(self, obj: Any, center: Point) -> List[float]:
+        """
+        Extract mesh geometry from Speckle object.
+        Returns flattened list of vertices [x1, y1, z1, ...] for triangles,
+        relative to the object center.
+        """
+        vertices_out = []
+        
+        # Get display meshes
+        meshes = []
+        if hasattr(obj, 'displayValue'):
+            val = obj.displayValue
+            if isinstance(val, list):
+                meshes.extend(val)
+            else:
+                meshes.append(val)
+        
+        # If no displayValue, check if object itself is a Mesh
+        if not meshes and hasattr(obj, 'speckle_type') and 'Objects.Geometry.Mesh' in str(obj.speckle_type):
+            meshes.append(obj)
+            
+        for mesh in meshes:
+            if not hasattr(mesh, 'vertices') or not hasattr(mesh, 'faces'):
+                continue
+                
+            # Speckle vertices are [x, y, z, x, y, z, ...]
+            raw_vertices = mesh.vertices
+            raw_faces = mesh.faces
+            
+            if not raw_vertices or not raw_faces:
+                continue
+            
+            # Process faces to get triangles
+            i = 0
+            while i < len(raw_faces):
+                n = raw_faces[i]
+                if n < 3: 
+                    i += 1
+                    continue 
+                
+                # Get indices for this face
+                face_indices = raw_faces[i+1 : i+1+n]
+                i += n + 1
+                
+                # Triangulate (fan method)
+                for j in range(n - 2):
+                    idx0 = face_indices[0]
+                    idx1 = face_indices[j+1]
+                    idx2 = face_indices[j+2]
+                    
+                    # Get vertices
+                    # Note: Speckle vertices list is flat [x,y,z, x,y,z...]
+                    v0 = raw_vertices[idx0*3 : idx0*3+3]
+                    v1 = raw_vertices[idx1*3 : idx1*3+3]
+                    v2 = raw_vertices[idx2*3 : idx2*3+3]
+                    
+                    # Transform to ROS frame
+                    v0_ros = self.transform_point(v0)
+                    v1_ros = self.transform_point(v1)
+                    v2_ros = self.transform_point(v2)
+                    
+                    # Subtract center to make relative
+                    vertices_out.extend([
+                        v0_ros[0] - center.x, v0_ros[1] - center.y, v0_ros[2] - center.z,
+                        v1_ros[0] - center.x, v1_ros[1] - center.y, v1_ros[2] - center.z,
+                        v2_ros[0] - center.x, v2_ros[1] - center.y, v2_ros[2] - center.z
+                    ])
+                    
+        return vertices_out
 
     def _extract_category(self, obj: Any) -> str:
         """Extract category from Speckle object"""
