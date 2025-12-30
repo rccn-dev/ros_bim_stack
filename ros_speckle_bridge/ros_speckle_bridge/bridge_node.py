@@ -24,6 +24,7 @@ from bim_interfaces.srv import QueryBim, FetchStream
 from .speckle_client import SpeckleClient
 from .converter import Converter
 from .cache_manager import CacheManager
+from .plugins.loader import PluginLoader
 
 
 class SpeckleBridgeNode(Node):
@@ -42,6 +43,7 @@ class SpeckleBridgeNode(Node):
         self.cache_manager = CacheManager()
         self.converter = None
         self.speckle_client = None
+        self.plugin_loader = PluginLoader(self)
         
         # Publishers
         self.object_pub = self.create_publisher(
@@ -100,6 +102,9 @@ class SpeckleBridgeNode(Node):
         self.declare_parameter('frame_id', 'map')
         self.declare_parameter('bim_frame_id', 'bim_origin')
         self.declare_parameter('auto_fetch', True)
+        
+        # Plugin configuration file path
+        self.declare_parameter('plugins_file', '')
 
     def initialize(self):
         """Initialize Speckle client and fetch data"""
@@ -117,6 +122,9 @@ class SpeckleBridgeNode(Node):
             
             # Publish static transform from map to bim_origin
             self._publish_static_transform(frame_id, bim_frame_id, datum)
+            
+            # Load plugins
+            self._load_plugins()
             
             # Initialize Speckle Client (uses SPECKLE_TOKEN from env)
             try:
@@ -233,6 +241,9 @@ class SpeckleBridgeNode(Node):
         # Publish data
         self._publish_objects()
         self._publish_visualization()
+        
+        # Notify plugins
+        self.plugin_loader.notify_objects_received(self.bim_objects)
 
     def _extract_all_objects(self, data: Any, objects: Optional[List] = None) -> List:
         """Recursively extract all Speckle objects from nested structure using GraphTraversal"""
@@ -379,6 +390,50 @@ class SpeckleBridgeNode(Node):
         self.get_logger().info(
             f"Published static transform: {parent_frame} -> {child_frame}"
         )
+    
+    def _load_plugins(self):
+        """Load and initialize plugins from configuration file"""
+        try:
+            import yaml
+            
+            # Get plugins file path from ROS parameter
+            plugins_file = self.get_parameter('plugins_file').value if self.has_parameter('plugins_file') else None
+            
+            # Fallback paths
+            if not plugins_file or not os.path.exists(plugins_file):
+                # Try common locations
+                search_paths = [
+                    '/config_override/plugins.yaml',
+                    os.path.join(os.path.dirname(__file__), '../../config/plugins.yaml'),
+                    'config/plugins.yaml'
+                ]
+                
+                for path in search_paths:
+                    if os.path.exists(path):
+                        plugins_file = path
+                        break
+            
+            if not plugins_file or not os.path.exists(plugins_file):
+                self.get_logger().info("No plugins configuration file found, skipping plugins")
+                return
+            
+            # Load YAML file
+            with open(plugins_file, 'r') as f:
+                config_data = yaml.safe_load(f)
+            
+            plugin_configs = config_data.get('plugins', [])
+            
+            if not plugin_configs:
+                self.get_logger().info("No plugins configured in file")
+                return
+            
+            self.get_logger().info(f"Loading plugins from: {plugins_file}")
+            self.plugin_loader.load_plugins(plugin_configs)
+            
+        except Exception as e:
+            self.get_logger().error(f"Failed to load plugins: {e}")
+            import traceback
+            self.get_logger().debug(traceback.format_exc())
 
     def handle_query(self, request: QueryBim.Request, response: QueryBim.Response):
         """Handle BIM query service requests"""
@@ -415,6 +470,7 @@ def main(args=None):
     """Main entry point"""
     rclpy.init(args=args)
     
+    node = None
     try:
         node = SpeckleBridgeNode()
         rclpy.spin(node)
@@ -424,6 +480,8 @@ def main(args=None):
         print(f"Fatal error: {e}", file=sys.stderr)
         return 1
     finally:
+        if node is not None:
+            node.plugin_loader.shutdown_all()
         if rclpy.ok():
             rclpy.shutdown()
     

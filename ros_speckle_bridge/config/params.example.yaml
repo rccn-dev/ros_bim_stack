@@ -29,3 +29,10 @@
       deny: []
       # Example: Exclude furniture and railings
       # deny: ["Furniture", "Railings", "Plumbing Fixtures"]
+    
+    # Plugin Configuration
+    # Plugins are loaded from a separate YAML file for complex configurations
+    # See config/plugins.yaml.example and doc/plugins.md
+    plugins_file: ""  # Path to plugins.yaml file (e.g., /config/plugins.yaml)
+
+

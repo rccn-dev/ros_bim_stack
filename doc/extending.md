@@ -369,3 +369,227 @@ def test_revit_to_bim_conversion():
     assert bim_obj.category == "Walls"
     assert bim_obj.element_type == "Basic Wall"
 ```
+
+---
+
+## Creating Output Plugins
+
+The ROS Speckle Bridge supports **output plugins** to extend functionality without adding dependencies to the core package.
+
+### Plugin Architecture Overview
+
+**Why Plugins?**
+- Keep core package lightweight (no simulator dependencies)
+- Users enable only features they need
+- Third parties can create custom integrations
+- Clean separation of concerns
+
+**Plugin Types:**
+- **Built-in**: Shipped with `ros_speckle_bridge` (e.g., `mesh_exporter`)
+- **Example**: Integration demos in `examples/` (e.g., `gazebo_spawner`)
+- **Custom**: Your own plugins in separate packages
+
+### Creating a Basic Plugin
+
+All plugins inherit from `OutputPlugin`:
+
+```python
+from ros_speckle_bridge.plugins.base import OutputPlugin
+from bim_interfaces.msg import BimObject
+from typing import List, Dict, Any
+
+class MyCustomPlugin(OutputPlugin):
+    """Your plugin description"""
+    
+    def initialize(self, config: Dict[str, Any]) -> bool:
+        """
+        Called once at startup.
+        
+        Args:
+            config: Plugin configuration from params.yaml
+            
+        Returns:
+            True if successful, False to disable plugin
+        """
+        try:
+            # Initialize your resources
+            self.server_url = config.get('server_url', 'localhost')
+            self.port = config.get('port', 8080)
+            
+            self.node.get_logger().info(
+                f"MyPlugin initialized: {self.server_url}:{self.port}"
+            )
+            return True
+            
+        except Exception as e:
+            self.node.get_logger().error(f"Init failed: {e}")
+            return False
+    
+    def on_objects_received(self, objects: List[BimObject]) -> None:
+        """
+        Called when BIM objects are received.
+        
+        This is where your main logic goes.
+        
+        Args:
+            objects: List of BIM objects from the bridge
+        """
+        self.node.get_logger().info(f"Processing {len(objects)} objects")
+        
+        for obj in objects:
+            self.process_object(obj)
+    
+    def shutdown(self) -> None:
+        """Called when node is shutting down"""
+        self.node.get_logger().info("MyPlugin shut down")
+```
+
+### Configuring Plugins
+
+Add to your `params.yaml`:
+
+```yaml
+/**:
+  ros__parameters:
+    plugins:
+      # Load from file path (development)
+      - type: "/path/to/my_plugin.py:MyCustomPlugin"
+        enabled: true
+        config:
+          server_url: "localhost"
+          port: 8080
+      
+      # Load from Python module (production)
+      - type: "my_package.plugins.MyCustomPlugin"
+        enabled: true
+        config:
+          api_key: "secret"
+      
+      # Built-in plugin (short name)
+      - type: "mesh_exporter"
+        enabled: true
+        config:
+          output_path: "/tmp/meshes"
+          format: "obj"
+```
+
+### Example Plugins
+
+#### Database Logger
+```python
+import psycopg2
+from ros_speckle_bridge.plugins.base import OutputPlugin
+
+class DatabaseLoggerPlugin(OutputPlugin):
+    def initialize(self, config):
+        self.conn = psycopg2.connect(**config['db_config'])
+        self.cursor = self.conn.cursor()
+        return True
+    
+    def on_objects_received(self, objects):
+        for obj in objects:
+            self.cursor.execute("""
+                INSERT INTO bim_objects (id, category, position_x, position_y, position_z)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET ...
+            """, (obj.id, obj.category, obj.pose.position.x, ...))
+        self.conn.commit()
+    
+    def shutdown(self):
+        self.cursor.close()
+        self.conn.close()
+```
+
+#### REST API Publisher
+```python
+from flask import Flask, jsonify
+from threading import Thread
+from ros_speckle_bridge.plugins.base import OutputPlugin
+
+class RestApiPlugin(OutputPlugin):
+    def initialize(self, config):
+        self.app = Flask(__name__)
+        self.objects = []
+        
+        @self.app.route('/objects')
+        def get_objects():
+            return jsonify([{'id': o.id, 'category': o.category} for o in self.objects])
+        
+        Thread(target=lambda: self.app.run(port=5000), daemon=True).start()
+        return True
+    
+    def on_objects_received(self, objects):
+        self.objects = objects
+```
+
+### Complete Example: Gazebo Integration
+
+See [examples/gazebo_integration](../examples/gazebo_integration/README.md) for a full working example that:
+- Exports meshes to Collada format
+- Spawns BIM objects in Gazebo Harmonic
+- Handles physics and collision geometry
+
+### Plugin Best Practices
+
+**1. Error Handling**
+```python
+def on_objects_received(self, objects):
+    for obj in objects:
+        try:
+            self.process_object(obj)
+        except Exception as e:
+            self.node.get_logger().error(f"Failed to process {obj.id}: {e}")
+            continue  # Don't stop on single failure
+```
+
+**2. Lazy Imports**
+```python
+def initialize(self, config):
+    try:
+        import tensorflow as tf  # Import only when plugin is enabled
+        self.model = tf.load_model(config['model_path'])
+        return True
+    except ImportError:
+        self.node.get_logger().error("TensorFlow not installed")
+        return False
+```
+
+**3. Configuration Validation**
+```python
+def initialize(self, config):
+    required = ['server_url', 'api_key']
+    for key in required:
+        if key not in config:
+            self.node.get_logger().error(f"Missing config: {key}")
+            return False
+    return True
+```
+
+### Plugin Testing
+
+```python
+import pytest
+from my_plugin import MyCustomPlugin
+from unittest.mock import Mock
+
+def test_plugin_initialization():
+    mock_node = Mock()
+    plugin = MyCustomPlugin(mock_node)
+    
+    assert plugin.initialize({'server_url': 'localhost'}) == True
+
+def test_object_processing():
+    plugin = MyCustomPlugin(Mock())
+    plugin.initialize({})
+    
+    mock_obj = Mock(id='test', category='Wall')
+    plugin.on_objects_received([mock_obj])
+    # Assert expected behavior
+```
+
+### Next Steps
+
+- Review [examples/gazebo_integration](../examples/gazebo_integration/) for complete example
+- Check built-in [mesh_exporter.py](../ros_speckle_bridge/ros_speckle_bridge/plugins/mesh_exporter.py)
+- See [OutputPlugin base class](../ros_speckle_bridge/ros_speckle_bridge/plugins/base.py)
+

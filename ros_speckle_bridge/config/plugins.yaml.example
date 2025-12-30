@@ -1,0 +1,23 @@
+# Plugin Configuration Template
+# Copy this file and customize for your use case
+
+plugins:
+  # Built-in mesh exporter - use short name
+  - type: mesh_exporter
+    enabled: true
+    config:
+      output_path: /tmp/meshes
+      format: dae  # Options: dae (Gazebo), obj, stl, usd (Isaac Sim)
+      export_metadata: true
+
+  # External plugin from file
+  # - type: /path/to/my_plugin.py:MyPluginClass
+  #   enabled: true
+  #   config:
+  #     custom_setting: value
+
+  # Plugin from installed package
+  # - type: my_package.plugins.custom.CustomPlugin
+  #   enabled: false
+  #   config:
+  #     setting: value
